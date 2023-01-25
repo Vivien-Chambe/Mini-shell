@@ -63,3 +63,6 @@ void init(){
     color_reset();
     printf("\nBienvenue dans le shell\n\n");
 }
+
+// On veut faire un historique des commandes tapées et pouvoir y accéder avec les flèches du haut et du bas
+

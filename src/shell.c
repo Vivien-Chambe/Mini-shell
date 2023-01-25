@@ -37,6 +37,12 @@ int main() {
 		color_vert(1);
 		printf("MatrixShell:");
 		color_reset();
+
+		// TODO ajouter gestion des fleches (curseur, historique, ...)
+		// Mais pour ça il faudrais lire les touches tapées au clavier une par une
+		// et non pas tout le buffer d'un coup comme c'est fait ici
+		
+
 		/* Récupération des données tapées au clavier */
 		data=fgets(line, INPUT_BUFFER_SIZE, stdin);
 
@@ -44,12 +50,12 @@ int main() {
 			/* Erreur ou fin de fichier : on quitte tout de suite */
 			if (errno) {
 				/* Une erreur: on affiche le message correspondant
-				* et on quitte en indiquant une erreur */
+				 /* et on quitte en indiquant une erreur */
 				perror("fgets");
 				exit(1);
 			} else {
 				/* Sinon ça doit être une fin de fichier.
-				* On l'indique et on quitte normalement */
+				 On l'indique et on quitte normalement */
 				fprintf(stderr, "EOF: exiting\n");
 				exit(0);
 			}
@@ -61,7 +67,7 @@ int main() {
 		}
 
 		/* On découpe la ligne en tokens (mots)
-		* Voir documentation dans shell-utils.h (avec des exemples) */
+		Voir documentation dans shell-utils.h (avec des exemples) */
 		nb_tokens=split_tokens(tokens, data, MAX_NB_TOKENS);
 
 		/* S'il y a trop de tokens, on abandonne */
@@ -71,7 +77,7 @@ int main() {
 		}
 
 		/* S'il n'y a pas de token, c'est que l'utilisateur n'a pas donné de
-		* commande. Il n'y a rien à faire. On arrête tout. */
+		 commande. Il n'y a rien à faire. On arrête tout. */
 		if (nb_tokens<=0) {
 			fprintf(stderr, "No tokens found: exiting\n");
 			exit(1);
@@ -88,6 +94,7 @@ int main() {
 					fprintf(stderr,"Erreur: Chemin invalide");
 					exit(1);
 				}
+
 				else{
 					printf("a\n");
 					printf("fd = %d",fd);
