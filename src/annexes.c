@@ -1,6 +1,12 @@
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h> 
+
+#include "shell-utils.h"
 
 void color_noir (int bold) {
     printf("\033[%d;30m", !!bold);
@@ -96,6 +102,57 @@ void custom_err(char* msg){
     else{
         printf("Erreur: %s introuvable\n", msg);
     }
+}
+
+
+void redirect_to(char* tokens[], const char* symb){
+    int fd;
+    char *file_out;
+    file_out = trouve_redirection(tokens,symb);
+			if(file_out != NULL){
+				char *file_out2 = trouve_redirection(tokens,symb);
+				while(file_out2 != NULL){
+					file_out = file_out2;
+					file_out2 = trouve_redirection(tokens,symb);
+				}
+                if (strcmp(symb,">")==0){
+                    fd = open(file_out, O_WRONLY | O_CREAT | O_TRUNC, 0644); //O_TRUNC pour que le fichier soit vidé s'il existe déjà
+                }
+                else if (strcmp(symb,">>")==0){
+                    fd = open(file_out, O_WRONLY | O_CREAT | O_APPEND, 0644); //O_APPEND pour que le fichier soit vidé s'il existe déjà
+                }
+				if(fd == -1){
+					custom_err("open");
+					custom_err(file_out);
+					exit(1);
+				}
+				dup2(fd, 1);close(fd);
+				execvp(tokens[0], tokens);
+			}
+}
+// Faudrait gérer le fait d'avoir plusieurs redirections mais de symboles différents
+
+void redirect_from(char* tokens[]){
+    int fd;
+    char *file_in;
+    file_in = trouve_redirection(tokens,"<");
+            if(file_in != NULL){
+                char *file_in2 = trouve_redirection(tokens,"<");
+                while(file_in2 != NULL){
+                    file_in = file_in2;
+                    file_in2 = trouve_redirection(tokens,"<");
+                }
+                fd = open(file_in, O_RDONLY);
+                if(fd == -1){
+                    custom_err("open");
+                    custom_err(file_in);
+                    exit(1);
+                }
+                dup2(fd, 0);close(fd);
+                redirect_to(tokens,">");
+                redirect_to(tokens,">>");
+                execvp(tokens[0], tokens);
+            }
 }
 
 // Cette fonction compte le nombre de lignes dans le fichier .history

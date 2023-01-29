@@ -93,58 +93,11 @@ int main() {
 
 		if(strcmp(tokens[0],"exit")==0){exit(0);}
 		if(fork()==0){
-			int fd;
-			char *file_out;
-			char *file_in;
+			
+			redirect_from(tokens);
 
-			file_in = trouve_redirection(tokens,"<");
-			if(file_in != NULL){
-				char *file_in2 = trouve_redirection(tokens,"<");
-				while(file_in2 != NULL){
-					file_in = file_in2;
-					file_in2 = trouve_redirection(tokens,"<");
-				}
-				fd = open(file_in, O_RDONLY, 0644); //O_TRUNC pour que le fichier soit vidé s'il existe déjà
-				if(fd == -1){
-					custom_err("open");
-					custom_err(file_in);
-					exit(1);
-				}
-				dup2(fd, 0);close(fd);
-				execvp(tokens[0], tokens);
-			}
-
-
-			file_out = trouve_redirection(tokens,">");
-			if(file_out != NULL){
-				char *file_out2 = trouve_redirection(tokens,">");
-				while(file_out2 != NULL){
-					file_out = file_out2;
-					file_out2 = trouve_redirection(tokens,">");
-				}
-				fd = open(file_out, O_WRONLY | O_CREAT | O_TRUNC, 0644); //O_TRUNC pour que le fichier soit vidé s'il existe déjà
-				if(fd == -1){
-					custom_err("open");
-					custom_err(file_out);
-					exit(1);
-				}
-				dup2(fd, 1);close(fd);
-				execvp(tokens[0], tokens);
-			}
-			// On peut pas gérer le cas où le nom de fichier est vide car trouver_redirection renvoie NULL si pas de fichier trouvé
-
-
-			file_out = trouve_redirection(tokens,">>");
-			if(file_out != NULL){
-				fd = open(file_out, O_WRONLY |O_APPEND| O_CREAT, 0644); // Je laisse le O_CREAT pour que le fichier soit créé s'il n'existe pas
-				if(fd == -1){
-					custom_err("open");
-					custom_err(file_out);
-					exit(1);
-				}
-				dup2(fd, 1);close(fd);
-				execvp(tokens[0], tokens);
-			}
+			redirect_to(tokens,">");
+			redirect_to(tokens,">>");
 
 			// On veut gérer le cas où il y a plusieurs redirections
 			// On va donc chercher la première redirection et on va la traiter
