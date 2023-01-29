@@ -93,24 +93,11 @@ int main() {
 
 		if(strcmp(tokens[0],"exit")==0){exit(0);}
 		if(fork()==0){
-			
+			/* On redirige les entrées et sorties si besoin */
 			redirect_from(tokens);
-
 			redirect_to(tokens,">");
 			redirect_to(tokens,">>");
-
-			// On veut gérer le cas où il y a plusieurs redirections
-			// On va donc chercher la première redirection et on va la traiter
-			// Puis on va chercher la seconde redirection et on va la traiter
-			// Et ainsi de suite jusqu'à ce qu'il n'y ait plus de redirections
-			// On va donc utiliser une boucle while
-			
-			
-			
-
-
-
-			/* On exécute la commande donné par l'utilisateur.
+			/* Si pas de redirection on exécute la commande donné par l'utilisateur.
 			 Son nom est dans le premier token (le premier mot tapé)
 			 ses arguments (éventuels) seront les tokens suivants */
 			execvp(tokens[0], tokens);

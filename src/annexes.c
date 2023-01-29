@@ -155,6 +155,11 @@ void redirect_from(char* tokens[]){
             }
 }
 
+void detect_pipes(char* tokens[]){
+    // AAAAAAAAAAAAAAAAAAAAH
+}
+
+
 // Cette fonction compte le nombre de lignes dans le fichier .history
 int len_history(){
     FILE *f = fopen(".history","r");

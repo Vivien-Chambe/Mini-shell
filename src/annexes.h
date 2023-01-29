@@ -13,6 +13,7 @@ void custom_err (char* msg);
 
 void redirect_to (char *tokens[], const char* symb);
 void redirect_from (char *tokens[]);
+void detect_pipes (char *tokens[]);
 
 void add_history (char *tokens[], int nb_tokens);
 void print_history (int nb);
