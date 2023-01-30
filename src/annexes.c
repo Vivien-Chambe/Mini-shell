@@ -153,13 +153,18 @@ void redirect_from(char* tokens[]){
                 redirect_to(tokens,">>");
                 execvp(tokens[0], tokens);
             }
+    else{
+        redirect_to(tokens,">");
+        redirect_to(tokens,">>");
+        execvp(tokens[0], tokens);
+    }
 }
 
-void detect_pipes(char* tokens[]){
-    int fd[2];
+void detect_pipes(char* tokens[],int fd[2]){
     char ** sous_tokens2;
     
     if((sous_tokens2 = trouve_tube(tokens,"|")) != NULL){
+        print_tokens(sous_tokens2, 5);
         pipe(fd);
         if (fork() == 0){
             close(fd[0]);
@@ -172,13 +177,17 @@ void detect_pipes(char* tokens[]){
             close(fd[1]);
             dup2(fd[0],0);
             close(fd[0]);
-            execvp(sous_tokens2[0], sous_tokens2);
+            detect_pipes(sous_tokens2,fd);
             }
         }
     else{
-        exit(0);
+        redirect_from(tokens);
     }
+    
     }
+
+
+
    
 
 

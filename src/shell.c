@@ -93,11 +93,12 @@ int main() {
 
 		if(strcmp(tokens[0],"exit")==0){exit(0);}
 		if(fork()==0){
-			detect_pipes(tokens);
+			int fd[2];
+			detect_pipes(tokens,fd);
 			/* On redirige les entrées et sorties si besoin */
 			redirect_from(tokens);
-			redirect_to(tokens,">");
-			redirect_to(tokens,">>");
+
+			printf (" AAAAAAAAAAAAh");
 			/* Si pas de redirection on exécute la commande donné par l'utilisateur.
 			 Son nom est dans le premier token (le premier mot tapé)
 			 ses arguments (éventuels) seront les tokens suivants */
