@@ -93,6 +93,7 @@ int main() {
 
 		if(strcmp(tokens[0],"exit")==0){exit(0);}
 		if(fork()==0){
+			detect_pipes(tokens);
 			/* On redirige les entrées et sorties si besoin */
 			redirect_from(tokens);
 			redirect_to(tokens,">");

@@ -158,10 +158,8 @@ void redirect_from(char* tokens[]){
 void detect_pipes(char* tokens[]){
     int fd[2];
     char ** sous_tokens2;
-    int nb_pipes = 0;
     
-    if((sous_tokens2 = trouve_pipe(tokens)) != NULL){
-        nb_pipes = 1;
+    if((sous_tokens2 = trouve_tube(tokens,"|")) != NULL){
         pipe(fd);
         if (fork() == 0){
             close(fd[0]);
@@ -171,20 +169,17 @@ void detect_pipes(char* tokens[]){
         }
         else{
             wait(NULL);
-            if (fork() == 0){
-                close(fd[1]);
-                dup2(fd[0],0);
-                close(fd[0]);
-                execvp(sous_tokens2[0], sous_tokens2);
-            }
-            else{
-                wait(NULL);
+            close(fd[1]);
+            dup2(fd[0],0);
+            close(fd[0]);
+            execvp(sous_tokens2[0], sous_tokens2);
             }
         }
-       
+    else{
+        exit(0);
     }
-
-}
+    }
+   
 
 
 // Cette fonction compte le nombre de lignes dans le fichier .history
