@@ -9,15 +9,15 @@ void color_cyan (int bold);
 void color_blanc (int bold);
 void color_reset ();
 void print_tokens (char *tokens[],int nb_tokens);
-void custom_err (char* msg);
+void custom_err (char* msg,char* tokens[]);
 
 void redirect_to (char *tokens[], const char* symb);
 void redirect_from (char *tokens[]);
-void detect_pipes (char *tokens[],int fd[]);
+void detect_pipes (char *tokens[],int fd[],int fd2[]);
 void detect_pipes2 (char *tokens[]);
 void detect_permissions (char *tokens[]);
 
 void add_history (char *tokens[], int nb_tokens);
-void print_history (int nb);
-int len_history ();
-char *get_history (int index);
+void print_history (int nb,char *tokens[]);
+int len_history (char *tokens[]);
+char *get_history (int index,char *tokens[]);

@@ -13,7 +13,7 @@ void color_noir (int bold) {
 }
 
 void color_rouge (int bold) {
-    printf("\033[%d;31m", !!bold);
+    fprintf(stderr,"\033[%d;31m", !!bold);
 }
 
 void color_vert (int bold) {
@@ -80,29 +80,45 @@ void print_tokens(char * tokens[],int nb_tokens){
 			printf("\n");
 }
 
-void custom_err(char* msg){
+void custom_err(char* msg,char* tokens[]){
     color_rouge(1);
     if (strcmp(msg, "open") == 0){
-        printf("Erreur: impossible d'ouvrir le fichier\n");
+        fprintf(stderr,"open: impossible d'ouvrir le fichier\n");
     }
     else if (strcmp(msg, "read")== 0){
-        printf("Erreur: impossible de lire le fichier\n");
+        fprintf(stderr,"read: impossible de lire le fichier\n");
     }
     else if (strcmp(msg, "write")== 0){
-        printf("Erreur: impossible d'écrire dans le fichier\n");
+        fprintf(stderr,"write: impossible d'écrire dans le fichier\n");
     }
     else if (strcmp(msg, "not_found")== 0){
-        printf("Erreur: fichier non trouvé\n");
+        fprintf(stderr,"not_found: fichier non trouvé\n");
     }
     else if (strcmp(msg, "history")== 0)
     {
-       printf("Erreur: Historique vide\n");
+       fprintf(stderr,"history: Historique vide\n");
     }
+    else if (strcmp(msg,"Exec")==0){
+        fprintf(stderr,"Exec: La commande '%s' n'existe pas\n",tokens[0]);
+    }   
     
     else{
-        printf("Erreur: %s introuvable\n", msg);
+        fprintf(stderr,"Erreur: %s introuvable\n", msg);
     }
 }
+
+int check_exist(char *tokens[]){
+    int fd = open(".log", O_WRONLY | O_CREAT | O_APPEND, 0644); //O_APPEND pour que le fichier soit vidé s'il existe déjà
+    dup2(fd,1);
+    
+    if (execvp(tokens[0],tokens)<=0){
+        return 0;
+    }
+    close(fd);
+
+    return 1;
+}
+
 
 
 void redirect_to(char* tokens[], const char* symb){
@@ -122,13 +138,16 @@ void redirect_to(char* tokens[], const char* symb){
                     fd = open(file_out, O_WRONLY | O_CREAT | O_APPEND, 0644); //O_APPEND pour que le fichier soit vidé s'il existe déjà
                 }
 				if(fd == -1){
-					custom_err("open");
-					custom_err(file_out);
+					custom_err("open",tokens);
+					custom_err(file_out,tokens);
 					exit(1);
 				}
-				dup2(fd, 1);close(fd);
-				execvp(tokens[0], tokens);
-			}
+                
+                dup2(fd,1);
+                execvp(tokens[0], tokens);
+                custom_err("Exec",tokens);
+                exit(0);
+            }
 }
 // Faudrait gérer le fait d'avoir plusieurs redirections mais de symboles différents
 
@@ -144,23 +163,28 @@ void redirect_from(char* tokens[]){
                 }
                 fd = open(file_in, O_RDONLY);
                 if(fd == -1){
-                    custom_err("open");
-                    custom_err(file_in);
+                    custom_err("open",tokens);
+                    custom_err(file_in,tokens);
                     exit(1);
                 }
                 dup2(fd, 0);close(fd);
                 redirect_to(tokens,">");
                 redirect_to(tokens,">>");
-                execvp(tokens[0], tokens);
+                if(execvp(tokens[0], tokens)<=0){
+				    custom_err("Exec",tokens);
+			    }	
             }
-    else{
-        redirect_to(tokens,">");
-        redirect_to(tokens,">>");
-        execvp(tokens[0], tokens);
-    }
+            else{
+                redirect_to(tokens,">");
+                redirect_to(tokens,">>");
+                        if(execvp(tokens[0], tokens)<=0){
+                            custom_err("Exec",tokens);
+                            exit(0);
+                        }	
+            }
 }
 
-void detect_pipes(char* tokens[],int fd[2]){
+void detect_pipes(char* tokens[],int fd[2],int fd2[2]){
     char ** sous_tokens2;
     
     if((sous_tokens2 = trouve_tube(tokens,"|")) != NULL){
@@ -168,23 +192,22 @@ void detect_pipes(char* tokens[],int fd[2]){
         pipe(fd);
         if (fork() == 0){
             close(fd[0]);
-            dup2(fd[1],1);
-            close(fd[1]);
-            execvp(tokens[0], tokens);
+            dup2(fd[1],fd2[1]); // On redirige la sortie standard vers le tube
+            redirect_from(tokens);
         }
         else{
             wait(NULL);
             close(fd[1]);
-            dup2(fd[0],0);
-            close(fd[0]);
-            detect_pipes(sous_tokens2,fd);
+            dup2(fd[0],fd2[0]); // On redirige l'entrée standard depuiis le tube
+            fd2[1] = fd[1];
+            fd2[0] = fd[0];
+            detect_pipes(sous_tokens2,fd,fd2);
             }
         }
     else{
         redirect_from(tokens);
-    }
-    
-    }
+    }    
+}
 
 
 
@@ -192,10 +215,10 @@ void detect_pipes(char* tokens[],int fd[2]){
 
 
 // Cette fonction compte le nombre de lignes dans le fichier .history
-int len_history(){
+int len_history(char *tokens[]){
     FILE *f = fopen(".history","r");
     if (f == NULL){
-        custom_err("open");
+        custom_err("open",tokens);
         return -1;
     }
 
@@ -214,13 +237,13 @@ int len_history(){
 void add_history(char *tokens[], int nb_tokens){
     FILE *f = fopen(".history","r");
     if (f == NULL){
-        custom_err("open");
+        custom_err("open",tokens);
         return;
     }
 
     FILE *tmp = fopen(".tmp","w");
     if (tmp == NULL){
-        custom_err("open");
+        custom_err("open",tokens);
         return;
     }
 
@@ -234,15 +257,15 @@ void add_history(char *tokens[], int nb_tokens){
 
     f = fopen(".history","w");
     if (f == NULL){
-        custom_err("open");
+        custom_err("open",tokens);
         return;
     }
 
     tmp = fopen(".tmp","r");
     if (tmp == NULL){
-        custom_err("open");
+        custom_err("open",tokens);
         return;
-    }
+        }	
     // write new command in history file
     for (int i = 0; i < nb_tokens; i++){
         fprintf(f, "%s ", tokens[i]);
@@ -250,16 +273,15 @@ void add_history(char *tokens[], int nb_tokens){
     fprintf(f, "\n");
     // copy tmp file in history file
     while ((c = fgetc(tmp)) != EOF){
-        fputc(c, f);
-    }
+        fputc(c, f);}
     fclose(f);
     fclose(tmp);
 }
 
-char *get_history(int index){
+char *get_history(int index,char* tokens[]){
     FILE *f = fopen(".history", "r");
     if (f == NULL){
-        custom_err("open");
+        custom_err("open",tokens);
         return NULL;
     }
 
@@ -281,10 +303,10 @@ char *get_history(int index){
 }
 
 // fonction permettant de lire les 10 dernières commandes tapées et de les afficher dans le terminal
-void print_history(int nb){
-    int len = len_history();
+void print_history(int nb,char * tokens[]){
+    int len = len_history(tokens);
     if (len <= 0){
-        custom_err("history");
+        custom_err("history",tokens);
     }
     if (nb > len){
         nb = len;
@@ -292,6 +314,6 @@ void print_history(int nb){
     printf("\nHistorique des %d dernières commandes:\n",nb);
     // on affiche les commandes à l'envers
      for (int i = nb-1; i >= 0; i--){
-         printf("%d: %s", i+1, get_history(i));
+         printf("%d: %s", i+1, get_history(i,tokens));
      }
 }

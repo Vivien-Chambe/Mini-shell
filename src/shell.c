@@ -69,11 +69,11 @@ int main() {
 		nb_tokens=split_tokens(tokens, data, MAX_NB_TOKENS);
 
 		if(nb_tokens==1 && strcmp(tokens[0],"hist")==0 ){
-			if(fork()==0){print_history(10);} 
+			if(fork()==0){print_history(10,tokens);continue;} 
 			else{wait(NULL);}
 		}
 		if(nb_tokens==2 && strcmp(tokens[0],"hist")==0 ){
-			if(fork()==0){print_history(atoi(tokens[1]));} 
+			if(fork()==0){print_history(atoi(tokens[1]),tokens);continue;} 
 			else{wait(NULL);}
 		}
 		/* S'il y a trop de tokens, on abandonne */
@@ -87,22 +87,26 @@ int main() {
 			fprintf(stderr, "No tokens found: exiting\n");
 			continue; // On continue la boucle while(1) pour pouvoir relancer une commande et pas quitter le shell
 		}
+
+		if(nb_tokens==2 && strcmp(tokens[0],"cd")==0 ){
+			chdir(tokens[1]);continue;
+			
+		}
 		/* On ajoute la commande à l'historique */
 		// Etant donné que l'on a fait des vérifications sur le nombre de tokens, on peut ajouter la commande à l'historique
 		add_history(tokens,nb_tokens);
 
 		if(strcmp(tokens[0],"exit")==0){exit(0);}
 		if(fork()==0){
+			/* On détecte les pipes et on les traite */
 			int fd[2];
-			detect_pipes(tokens,fd);
+			int fd2[2];
+			fd2[0] = 0;
+			fd2[1] = 1;
+			detect_pipes(tokens,fd,fd2);
 			/* On redirige les entrées et sorties si besoin */
 			redirect_from(tokens);
 
-			printf (" AAAAAAAAAAAAh");
-			/* Si pas de redirection on exécute la commande donné par l'utilisateur.
-			 Son nom est dans le premier token (le premier mot tapé)
-			 ses arguments (éventuels) seront les tokens suivants */
-			execvp(tokens[0], tokens);
 		}
 		else{wait(NULL);}
 		
