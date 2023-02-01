@@ -14,8 +14,9 @@ void custom_err (char* msg,char* tokens[]);
 void redirect_to (char *tokens[], const char* symb);
 void redirect_from (char *tokens[]);
 void detect_pipes (char *tokens[],int fd[],int fd2[]);
-void detect_pipes2 (char *tokens[]);
-void detect_permissions (char *tokens[]);
+
+void handler(int sig);
+int trouve_et(char** tokens);
 
 void add_history (char *tokens[], int nb_tokens);
 void print_history (int nb,char *tokens[]);

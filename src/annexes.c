@@ -103,8 +103,9 @@ void custom_err(char* msg,char* tokens[]){
     }   
     
     else{
-        fprintf(stderr,"Erreur: %s introuvable\n", msg);
+        fprintf(stderr,"Erreur: %s introuvable ou permission non accordée(s)\n", msg);
     }
+    color_reset();
 }
 
 int check_exist(char *tokens[]){
@@ -142,7 +143,6 @@ void redirect_to(char* tokens[], const char* symb){
 					custom_err(file_out,tokens);
 					exit(1);
 				}
-                
                 dup2(fd,1);
                 execvp(tokens[0], tokens);
                 custom_err("Exec",tokens);
@@ -177,10 +177,10 @@ void redirect_from(char* tokens[]){
             else{
                 redirect_to(tokens,">");
                 redirect_to(tokens,">>");
-                        if(execvp(tokens[0], tokens)<=0){
-                            custom_err("Exec",tokens);
-                            exit(0);
-                        }	
+                if(execvp(tokens[0], tokens)<=0){
+                    custom_err("Exec",tokens);
+                    exit(0);	
+                }
             }
 }
 
@@ -199,8 +199,7 @@ void detect_pipes(char* tokens[],int fd[2],int fd2[2]){
             wait(NULL);
             close(fd[1]);
             dup2(fd[0],fd2[0]); // On redirige l'entrée standard depuiis le tube
-            fd2[1] = fd[1];
-            fd2[0] = fd[0];
+            
             detect_pipes(sous_tokens2,fd,fd2);
             }
         }
@@ -209,9 +208,23 @@ void detect_pipes(char* tokens[],int fd[2],int fd2[2]){
     }    
 }
 
+int trouve_et(char **tokens)
+{
+	while(tokens[0] != NULL) {
+		if (strcmp(tokens[0], "&")==0) {
+            tokens[0]=NULL;
+			return 1;
+		}
+		tokens++;
+	}
+	/* Rien trouvé */
+	return 0;
+}
 
 
-   
+void handler(int sig){
+    waitpid(-1,NULL,WNOHANG);
+}
 
 
 // Cette fonction compte le nombre de lignes dans le fichier .history

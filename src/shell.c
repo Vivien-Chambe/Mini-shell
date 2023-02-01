@@ -16,6 +16,8 @@ int main() {
 	if(fork()==0){execl("/bin/clear","clear",NULL);} // Pour lancer uniquement notre shell
 	else{wait(NULL);}
 	init(); // Initialisation shell
+
+	signal(SIGCHLD,handler);
 	/* Une variable pour sotcker les caractères tapés au clavier */
 	char line[INPUT_BUFFER_SIZE+1];
 
@@ -88,27 +90,32 @@ int main() {
 			continue; // On continue la boucle while(1) pour pouvoir relancer une commande et pas quitter le shell
 		}
 
-		if(nb_tokens==2 && strcmp(tokens[0],"cd")==0 ){
+		if(nb_tokens==2 && strcmp(tokens[0],"cd")==0){
 			chdir(tokens[1]);continue;
 			
 		}
 		/* On ajoute la commande à l'historique */
 		// Etant donné que l'on a fait des vérifications sur le nombre de tokens, on peut ajouter la commande à l'historique
 		add_history(tokens,nb_tokens);
-
+		
 		if(strcmp(tokens[0],"exit")==0){exit(0);}
-		if(fork()==0){
+		int pid;
+		if((pid=fork())==0){
+			trouve_et(tokens);
+			print_tokens(tokens,nb_tokens);
 			/* On détecte les pipes et on les traite */
 			int fd[2];
 			int fd2[2];
 			fd2[0] = 0;
 			fd2[1] = 1;
 			detect_pipes(tokens,fd,fd2);
-			/* On redirige les entrées et sorties si besoin */
-			redirect_from(tokens);
-
 		}
-		else{wait(NULL);}
+		
+		else{
+			int trouve = trouve_et(tokens);
+			if(trouve){waitpid(-1,NULL,WNOHANG);}
+			else{waitpid(pid,NULL,0);}
+		}
 		
 	}
 
