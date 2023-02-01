@@ -91,9 +91,14 @@ int main() {
 		}
 
 		if(nb_tokens==2 && strcmp(tokens[0],"cd")==0){
-			chdir(tokens[1]);continue;
-			
+			chdir(tokens[1]);continue;	
 		}
+
+		if(nb_tokens==2 && strcmp(tokens[0],"get")==0){
+			char * cmd = get_history(atoi(tokens[1]),tokens);
+				
+		}
+
 		/* On ajoute la commande à l'historique */
 		// Etant donné que l'on a fait des vérifications sur le nombre de tokens, on peut ajouter la commande à l'historique
 		add_history(tokens,nb_tokens);
@@ -102,13 +107,10 @@ int main() {
 		int pid;
 		if((pid=fork())==0){
 			trouve_et(tokens);
-			print_tokens(tokens,nb_tokens);
+			//print_tokens(tokens,nb_tokens);
 			/* On détecte les pipes et on les traite */
-			int fd[2];
-			int fd2[2];
-			fd2[0] = 0;
-			fd2[1] = 1;
-			detect_pipes(tokens,fd,fd2);
+			
+			detect_pipes(tokens);
 		}
 		
 		else{
