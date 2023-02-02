@@ -8,6 +8,8 @@
 
 #include "shell-utils.h"
 
+extern char *path;
+
 void color_noir (int bold) {
     printf("\033[%d;30m", !!bold);
 }
@@ -184,26 +186,27 @@ void redirect_from(char* tokens[]){
             }
 }
 
-void detect_pipes(char* tokens[],int fd[2],int fd2[2]){
+void detect_pipes(char* tokens[]){
     char ** sous_tokens2;
-    
+    int fd[2];
     if((sous_tokens2 = trouve_tube(tokens,"|")) != NULL){
-        print_tokens(sous_tokens2, 5);
+        //print_tokens(sous_tokens2, 5);
         pipe(fd);
         if (fork() == 0){
             close(fd[0]);
-            dup2(fd[1],fd2[1]); // On redirige la sortie standard vers le tube
+            dup2(fd[1],1); // On redirige la sortie standard vers le tube
+            //execvp(tokens[0], tokens);
             redirect_from(tokens);
         }
         else{
             wait(NULL);
             close(fd[1]);
-            dup2(fd[0],fd2[0]); // On redirige l'entrée standard depuiis le tube
-            
-            detect_pipes(sous_tokens2,fd,fd2);
+            dup2(fd[0],0); // On redirige l'entrée standard depuiis le tube
+            detect_pipes(sous_tokens2);
             }
         }
     else{
+        //execvp(tokens[0], tokens);
         redirect_from(tokens);
     }    
 }
@@ -329,4 +332,26 @@ void print_history(int nb,char * tokens[]){
      for (int i = nb-1; i >= 0; i--){
          printf("%d: %s", i+1, get_history(i,tokens));
      }
+}
+// fonction permettant de chercher l'emplacement de .history dans le système de fichier
+char * locate_history(){
+    char *home = getenv("HOME");
+    char * path = malloc(100);
+    int fd[2];
+    pipe(fd);
+    if(fork() == 0){
+        close(fd[0]);
+        dup2(fd[1],1);
+        int fd2 = open("/dev/null", O_WRONLY);
+        dup2(fd2,2);
+        execlp("/bin/find","find",home,"-name",".history", "-print", NULL);
+    }
+    else{
+        wait(NULL);
+        close(fd[1]);
+        dup2(fd[0],0);
+        read(fd[0],path,100);
+        return path;
+    }
+    return NULL;
 }

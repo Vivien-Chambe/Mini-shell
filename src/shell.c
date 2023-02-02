@@ -16,8 +16,14 @@ int main() {
 	if(fork()==0){execl("/bin/clear","clear",NULL);} // Pour lancer uniquement notre shell
 	else{wait(NULL);}
 	init(); // Initialisation shell
-
 	signal(SIGCHLD,handler);
+	/* char * path = ".history";
+	if(strcmp(path,".history")==0){};
+	// Pour trouver le chemin de l'historique mais très long à lancer 
+	if(fork()==0){path = locate_history();} */
+	
+
+	
 	/* Une variable pour sotcker les caractères tapés au clavier */
 	char line[INPUT_BUFFER_SIZE+1];
 
@@ -38,10 +44,6 @@ int main() {
 		color_vert(1);
 		printf("PabloShell:");
 		color_reset();
-
-		// TODO ajouter gestion des fleches (curseur, historique, ...)
-		// Mais pour ça il faudrais lire les touches tapées au clavier une par une
-		// et non pas tout le buffer d'un coup comme c'est fait ici
 
 		/* Récupération des données tapées au clavier */
 		data=fgets(line, INPUT_BUFFER_SIZE, stdin);
@@ -70,14 +72,7 @@ int main() {
 		 Voir documentation dans shell-utils.h (avec des exemples) */
 		nb_tokens=split_tokens(tokens, data, MAX_NB_TOKENS);
 
-		if(nb_tokens==1 && strcmp(tokens[0],"hist")==0 ){
-			if(fork()==0){print_history(10,tokens);continue;} 
-			else{wait(NULL);}
-		}
-		if(nb_tokens==2 && strcmp(tokens[0],"hist")==0 ){
-			if(fork()==0){print_history(atoi(tokens[1]),tokens);continue;} 
-			else{wait(NULL);}
-		}
+		
 		/* S'il y a trop de tokens, on abandonne */
 		if (nb_tokens==MAX_NB_TOKENS) {
 			fprintf(stderr, "Too many tokens: exiting\n");
@@ -86,7 +81,7 @@ int main() {
 		/* S'il n'y a pas de token, c'est que l'utilisateur n'a pas donné de
 		 commande. Il n'y a rien à faire. On arrête tout. */
 		if (nb_tokens<=0) {
-			fprintf(stderr, "No tokens found: exiting\n");
+			fprintf(stderr, "No tokens found\n");
 			continue; // On continue la boucle while(1) pour pouvoir relancer une commande et pas quitter le shell
 		}
 
@@ -95,13 +90,23 @@ int main() {
 		}
 
 		if(nb_tokens==2 && strcmp(tokens[0],"get")==0){
-			char * cmd = get_history(atoi(tokens[1]),tokens);
-				
+			printf("Execution de la commande : %s\n",get_history(atoi(tokens[1])-1,tokens));
+			nb_tokens=split_tokens(tokens,get_history(atoi(tokens[1])-1,tokens),MAX_NB_TOKENS);
 		}
 
-		/* On ajoute la commande à l'historique */
-		// Etant donné que l'on a fait des vérifications sur le nombre de tokens, on peut ajouter la commande à l'historique
-		add_history(tokens,nb_tokens);
+		// Affichage de l'historique
+		else if(nb_tokens==1 && strcmp(tokens[0],"hist")==0 ){
+			print_history(10,tokens);continue;
+		}
+		else if(nb_tokens==2 && strcmp(tokens[0],"hist")==0 ){
+			print_history(atoi(tokens[1]),tokens);continue;
+		}
+
+		else{
+			/* On ajoute la commande à l'historique */
+			// Etant donné que l'on a fait des vérifications sur le nombre de tokens, on peut ajouter la commande à l'historique
+			add_history(tokens,nb_tokens);
+		}
 		
 		if(strcmp(tokens[0],"exit")==0){exit(0);}
 		int pid;
@@ -109,7 +114,6 @@ int main() {
 			trouve_et(tokens);
 			//print_tokens(tokens,nb_tokens);
 			/* On détecte les pipes et on les traite */
-			
 			detect_pipes(tokens);
 		}
 		
