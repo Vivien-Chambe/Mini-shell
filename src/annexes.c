@@ -1,3 +1,5 @@
+
+
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -71,7 +73,8 @@ void init(){
     printf("            |;  ,    |\n");
     printf("            |;  ,    |\n");
     color_reset();
-    printf("\nBienvenue dans le shell\n\n");
+    printf("\nBienvenue dans le shell écrit par Chambe Vivien Et Rozen Adjamé");
+    printf("\nDans le cadre du cours de Systèmes\n\n");
 }
 
 void print_tokens(char * tokens[],int nb_tokens){

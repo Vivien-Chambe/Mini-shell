@@ -19,7 +19,7 @@ int main() {
 	signal(SIGCHLD,handler);
 	/* char * path = ".history";
 	if(strcmp(path,".history")==0){};
-	// Pour trouver le chemin de l'historique mais très long à lancer 
+	 Pour trouver le chemin de l'historique mais très long à lancer 
 	if(fork()==0){path = locate_history();} */
 	
 
@@ -110,15 +110,17 @@ int main() {
 		
 		if(strcmp(tokens[0],"exit")==0){exit(0);}
 		int pid;
+		int trouve = trouve_et(tokens);
+
+		
+
 		if((pid=fork())==0){
-			trouve_et(tokens);
 			//print_tokens(tokens,nb_tokens);
 			/* On détecte les pipes et on les traite */
 			detect_pipes(tokens);
 		}
 		
 		else{
-			int trouve = trouve_et(tokens);
 			if(trouve){waitpid(-1,NULL,WNOHANG);}
 			else{waitpid(pid,NULL,0);}
 		}
